@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
         html, body, #map {
             width: 100%;
@@ -35,6 +36,7 @@
         <script src="js/rbush.min.js"></script>
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
         <script src="data/Region_0.js"></script>
         <script src="data/District_1.js"></script>
         <script src="data/commune_2.js"></script>
@@ -95,11 +97,12 @@
         <script src="data/Reboisement_57.js"></script>
         <script>
         var map = L.map('map', {
-            zoomControl:true, maxZoom:28, minZoom:1
-        }).fitBounds([[-17.594428790941286,41.5687851038804],[-11.442196387225128,53.380455325783515]]);
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-18.36994418318205,41.5687851038804],[-10.666680994984365,53.380455325783515]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
         function removeEmptyRowsFromPopupContent(content, feature) {
          var tempDiv = document.createElement('div');
          tempDiv.innerHTML = content;
@@ -113,15 +116,33 @@
          }
          return tempDiv.innerHTML;
         }
-        document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
-          var tagName = event.target.tagName,
-            popup = map._popup;
-          // Also check if flag is already set.
-          if (tagName === "IMG" && popup && !popup._updated) {
-            popup._updated = true; // Set flag to prevent looping.
-            popup.update();
-          }
-        }, true);
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
@@ -131,11 +152,11 @@
                         <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Region_0_0() {
@@ -176,11 +197,11 @@
                         <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_District_1_0() {
@@ -209,6 +230,7 @@
             style: style_District_1_0,
         });
         bounds_group.addLayer(layer_District_1);
+        map.addLayer(layer_District_1);
         function pop_commune_2(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -221,11 +243,11 @@
                         <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_commune_2_0() {
@@ -236,7 +258,7 @@
                 dashArray: '',
                 lineCap: 'square',
                 lineJoin: 'bevel',
-                weight: 2.0,
+                weight: 1.0,
                 fillOpacity: 0,
                 interactive: true,
             }
@@ -254,6 +276,7 @@
             style: style_commune_2_0,
         });
         bounds_group.addLayer(layer_commune_2);
+        map.addLayer(layer_commune_2);
         function pop_PAGE2_3(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -269,11 +292,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['PAGE2'] !== null ? autolinker.link(feature.properties['PAGE2'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_PAGE2_3_0() {
@@ -299,7 +322,6 @@
             style: style_PAGE2_3_0,
         });
         bounds_group.addLayer(layer_PAGE2_3);
-        map.addLayer(layer_PAGE2_3);
         function pop_ProDECID_4(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -315,11 +337,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['PRODECID'] !== null ? autolinker.link(feature.properties['PRODECID'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_ProDECID_4_0 = new L.StripePattern({
@@ -361,7 +383,6 @@
             styles: [style_ProDECID_4_0,style_ProDECID_4_1,]
         });
         bounds_group.addLayer(layer_ProDECID_4);
-        map.addLayer(layer_ProDECID_4);
         function pop_ProPFR_5(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -377,11 +398,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['PROPFR'] !== null ? autolinker.link(feature.properties['PROPFR'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_ProPFR_5_0 = new L.StripePattern({
@@ -423,7 +444,6 @@
             styles: [style_ProPFR_5_0,style_ProPFR_5_1,]
         });
         bounds_group.addLayer(layer_ProPFR_5);
-        map.addLayer(layer_ProPFR_5);
         function pop_F4F_6(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -439,11 +459,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['F4F'] !== null ? autolinker.link(feature.properties['F4F'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_F4F_6_0 = new L.StripePattern({
@@ -485,7 +505,6 @@
             styles: [style_F4F_6_0,style_F4F_6_1,]
         });
         bounds_group.addLayer(layer_F4F_6);
-        map.addLayer(layer_F4F_6);
         function pop_ProSOL_7(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -501,11 +520,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['PROSOL'] !== null ? autolinker.link(feature.properties['PROSOL'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_ProSOL_7_0 = new L.StripePattern({
@@ -565,7 +584,6 @@
             styles: [style_ProSOL_7_0,style_ProSOL_7_1,style_ProSOL_7_2,]
         });
         bounds_group.addLayer(layer_ProSOL_7);
-        map.addLayer(layer_ProSOL_7);
         function pop_BIA_8(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -581,11 +599,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['BIA'] !== null ? autolinker.link(feature.properties['BIA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_BIA_8_0() {
@@ -614,7 +632,6 @@
             style: style_BIA_8_0,
         });
         bounds_group.addLayer(layer_BIA_8);
-        map.addLayer(layer_BIA_8);
         function pop_PLAEV_9(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -630,11 +647,11 @@
                         <td colspan="2"><b>Projet: </b>' + (feature.properties['PLAE5'] !== null ? autolinker.link(feature.properties['PLAE5'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_PLAEV_9_0() {
@@ -663,7 +680,6 @@
             style: style_PLAEV_9_0,
         });
         bounds_group.addLayer(layer_PLAEV_9);
-        map.addLayer(layer_PLAEV_9);
         function pop_Campement_10(feature, layer) {
             
         }
@@ -744,7 +760,7 @@
         });
         bounds_group.addLayer(layer_Coupeillicite_11);
         function pop_Carbonisation_12(feature, layer) {
-            
+          
         }
 
         function style_Carbonisation_12_0() {
@@ -783,7 +799,7 @@
         });
         bounds_group.addLayer(layer_Carbonisation_12);
         function pop_Defrichementetplantationetfeux_13(feature, layer) {
-            
+           
         }
 
         function style_Defrichementetplantationetfeux_13_0() {
@@ -900,7 +916,7 @@
         });
         bounds_group.addLayer(layer_Braconage_15);
         function pop_ProduitsforestiersnonligneuxPFNL_16(feature, layer) {
-            
+          
         }
 
         function style_ProduitsforestiersnonligneuxPFNL_16_0() {
@@ -953,11 +969,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['ha'] !== null ? autolinker.link(feature.properties['ha'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Airesproteges_17_0() {
@@ -986,7 +1002,6 @@
             style: style_Airesproteges_17_0,
         });
         bounds_group.addLayer(layer_Airesproteges_17);
-        map.addLayer(layer_Airesproteges_17);
         function pop_ProPFR_Limite_TG_18(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
@@ -1008,11 +1023,11 @@
                         <td colspan="2"><b>Surface: </b>' + (feature.properties['SUPERFICIE'] !== null ? autolinker.link(feature.properties['SUPERFICIE'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_ProPFR_Limite_TG_18_0 = new L.StripePattern({
@@ -1083,11 +1098,11 @@
                         <td colspan="2"><b>Type occupation: </b>' + (feature.properties['TYPEOCCUPA'] !== null ? autolinker.link(feature.properties['TYPEOCCUPA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_ProPFR_Zonage_19_0() {
@@ -1139,11 +1154,11 @@
                         <td colspan="2"><b>Surface: </b>' + (feature.properties['Superf(Ha)'] !== null ? autolinker.link(feature.properties['Superf(Ha)'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_certificatfoncier_20_0() {
@@ -1178,11 +1193,11 @@
                         <td colspan="2"><b>Mesure: </b>' + (feature.properties['CHI_Mesure'] !== null ? autolinker.link(feature.properties['CHI_Mesure'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Parcelle_amenagee_21_0() {
@@ -1232,11 +1247,11 @@
                         <td colspan="2"><b>Sécurité foncière: </b>' + (feature.properties['Secur_Fonc'] !== null ? autolinker.link(feature.properties['Secur_Fonc'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Paturage_22_0() {
@@ -1286,11 +1301,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_ha'] !== null ? autolinker.link(feature.properties['Surface_ha'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_F4F_23_0() {
@@ -1349,11 +1364,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_Ha'] !== null ? autolinker.link(feature.properties['Surface_Ha'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_TGRN_24_0() {
@@ -1394,11 +1409,11 @@
                         <td colspan="2"><b>Longueur (m): </b>' + (feature.properties['Longueur_m'] !== null ? autolinker.link(feature.properties['Longueur_m'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_ProtectionBerge_25_0() {
@@ -1448,11 +1463,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['surface_ha'] !== null ? autolinker.link(feature.properties['surface_ha'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Reboisement_antierosif_26_0() {
@@ -1493,11 +1508,11 @@
                         <td colspan="2"><b>Fokontany: </b>' + (feature.properties['FKT'] !== null ? autolinker.link(feature.properties['FKT'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_EcoleVerte_27_0() {
@@ -1551,18 +1566,18 @@
                         <td colspan="2"><b>Fokontany: </b>' + (feature.properties['FKT'] !== null ? autolinker.link(feature.properties['FKT'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Villages_FBS_28_0() {
             return {
                 pane: 'pane_Villages_FBS_28',
                 shape: 'triangle',
-                radius: 3.999999999999997,
+                radius: 4.0,
                 opacity: 1,
                 color: 'rgba(61,128,53,1.0)',
                 dashArray: '',
@@ -1612,11 +1627,11 @@
                         <td colspan="2"><b>Nombre GEC: </b>' + (feature.properties['_Nb_GEC'] !== null ? autolinker.link(feature.properties['_Nb_GEC'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Villages_GEC_29_0() {
@@ -1670,11 +1685,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface-ha'] !== null ? autolinker.link(feature.properties['Surface-ha'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_ActionsCovidReboisementECOBlueVenturesAgaKhan_30_0() {
@@ -1706,11 +1721,11 @@
                         <td colspan="2"><b>Plantation: </b>' + (feature.properties['Plantation'] !== null ? autolinker.link(feature.properties['Plantation'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         var pattern_Moringa_31_0 = new L.StripePattern({
@@ -1772,11 +1787,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Sup'] !== null ? autolinker.link(feature.properties['Sup'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Reboisement_Anacarde_S1_S2_S3_32_0() {
@@ -1820,11 +1835,11 @@
                         <td colspan="2"><b>Village: </b>' + (feature.properties['village'] !== null ? autolinker.link(feature.properties['village'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Localisation_plantation_BR_Diego2Beramanja_33_0() {
@@ -1895,11 +1910,11 @@
                         <td colspan="2"><b>Ménages total: </b>' + (feature.properties['TOT_mng'] !== null ? autolinker.link(feature.properties['TOT_mng'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_menages_cdv_34_0() {
@@ -1943,11 +1958,11 @@
                         <td colspan="2"><b>Description: </b>' + (feature.properties['descriptio'] !== null ? autolinker.link(feature.properties['descriptio'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Pt_vente_miel_Ambanja_35_0() {
@@ -1997,11 +2012,11 @@
                         <td colspan="2"><b>Localité: </b>' + (feature.properties['LOCALITE'] !== null ? autolinker.link(feature.properties['LOCALITE'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Sitesapicoles_36_0() {
@@ -2048,11 +2063,11 @@
                         <td colspan="2"><b>Description: </b>' + (feature.properties['Name'] !== null ? autolinker.link(feature.properties['Name'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_MEO_SAC_BOENY_DIANA_37_0() {
@@ -2099,11 +2114,11 @@
                         <td colspan="2"><b>Poutour km: </b>' + (feature.properties['Poutour_Km'] !== null ? autolinker.link(feature.properties['Poutour_Km'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_MEOSAC_ParefeuagricoleDIANA_38_0() {
@@ -2144,11 +2159,11 @@
                         <td colspan="2"><b>Poutour (km): </b>' + (feature.properties['Poutour_Km'] !== null ? autolinker.link(feature.properties['Poutour_Km'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Parefeu_39_0() {
@@ -2192,11 +2207,11 @@
                         <td colspan="2"><b>Fokontany: </b>' + (feature.properties['FKT'] !== null ? autolinker.link(feature.properties['FKT'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_COSSites_40_0() {
@@ -2228,11 +2243,11 @@
                         <td colspan="2"><b>Nom: </b>' + (feature.properties['Nom'] !== null ? autolinker.link(feature.properties['Nom'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Pointdevente_41_0() {
@@ -2271,11 +2286,11 @@
                         <td colspan="2"><b>Nom: </b>' + (feature.properties['Nom'] !== null ? autolinker.link(feature.properties['Nom'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_AtelierMajunga_42_0() {
@@ -2317,11 +2332,11 @@
                         <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_VillageTCA_43_0() {
@@ -2369,11 +2384,11 @@
                         <td colspan="2"><b>Nombre GMDR I: </b>' + (feature.properties['Nbr_GMDR_i'] !== null ? autolinker.link(feature.properties['Nbr_GMDR_i'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Bassin_CRC_GMDR_44_0() {
@@ -2411,11 +2426,11 @@
                         <td colspan="2"><b>Produit: </b>' + (feature.properties['Produit'] !== null ? autolinker.link(feature.properties['Produit'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Pointdevente_45_0() {
@@ -2460,11 +2475,11 @@
                         <td colspan="2"><b>Nom CRC: </b>' + (feature.properties['Nom_CRC'] !== null ? autolinker.link(feature.properties['Nom_CRC'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Centreurbainruralducharbon_46_0() {
@@ -2506,11 +2521,11 @@
                         <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_CRCdepots_47_0() {
@@ -2549,11 +2564,11 @@
                         <td colspan="2"><b>Nom: </b>' + (feature.properties['Nom_site'] !== null ? autolinker.link(feature.properties['Nom_site'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_SitesGMDR_48_0() {
@@ -2607,11 +2622,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Reboisementvillageoisindividuel_49_0() {
@@ -2652,11 +2667,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Zonedinterventionprvue_50_0() {
@@ -2700,11 +2715,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Reboisement_51_0() {
@@ -2754,11 +2769,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Paturage_52_0() {
@@ -2799,11 +2814,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Miseendefens_53_0() {
@@ -2844,11 +2859,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Lutteantierosive_54_0() {
@@ -2889,11 +2904,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['Surface_HA'] !== null ? autolinker.link(feature.properties['Surface_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Foretscommunales_55_0() {
@@ -2946,11 +2961,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['SURFACE_HA'] !== null ? autolinker.link(feature.properties['SURFACE_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Agroforesterie_56_0() {
@@ -2991,11 +3006,11 @@
                         <td colspan="2"><b>Surface (ha): </b>' + (feature.properties['SURFACE_HA'] !== null ? autolinker.link(feature.properties['SURFACE_HA'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
-            layer.bindPopup(popupContent, {maxHeight: 400});
-            var popup = layer.getPopup();
-            var content = popup.getContent();
-            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-            popup.setContent(updatedContent);
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
         }
 
         function style_Reboisement_57_0() {
