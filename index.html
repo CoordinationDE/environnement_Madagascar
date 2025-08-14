@@ -1,29 +1,282 @@
 <!doctype html>
 <html lang="en">
+
+<!--***************************************************************************************************************
+// HEAD : Code that gets loaded before the website is shown (Metadata, CSS, Title etc)
+// *************************************************************************************************************** --> 
+
     <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta charset="utf-8"> <!--Definiert die Zeichenkodierung als UTF-8-->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!--Command to load with the newest available engine-->
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width"> <!--Optimiert die Seite für mobile Geräte (Startzoom, Kein Zoomen durch User, Passt sich Bildschirmbreite an)-->
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css"> <!--link to css file for hierachy layerchoice-->
         <link rel="stylesheet" href="css/qgis2web.css">
-        <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css"> <!--link to Icon-library-->
+        <link rel="stylesheet" href="css/leaflet-measure.css"> <!--link to measurement tool-->
+        <!-- CSS für Tree Control -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet.control.layers.tree/L.Control.Layers.Tree.css" />
+  
         <style>
-        html, body, #map {
+        html, body {
+            background-color: white; /* Stellt sicher, dass der Hintergrund weiß ist */
+        } 
+        /* Style for Website Title */
+        #page-title-banner {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
             width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
+            background-color: #1b4863;
+            color: white;
+            font-family: "Arial", Times, serif;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 25px 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            box-sizing: border-box;
         }
+        .title {
+            flex: 1;
+            line-height: 1.2; /* 🔧 kleinerer Zeilenabstand */
+            text-align: left;
+            margin-left: 300px;
+        }
+        .title-extra {
+            margin-left: 40px; /* 🔧 mehr Abstand zwischen Text & Logo */
+            white-space: nowrap;
+            font-size: 12px;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 10px; /* 🔧 horizontaler Abstand zwischen Text und Logo */
+        }
+
+        /* Sidebar left for the legend */
+        #sidebar {
+            position: fixed;
+            top: 70px; /* unter dem Banner */
+            left: 0;
+            width: 300px;
+            height: calc(100% - 56px);
+            background-color: #87a5b8; 
+            box-sizing: border-box;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: Arial, sans-serif;
+            border-right: 1px solid #ccc;
+            z-index: 999;
+            transition: background-color 0.3s ease;
+        }
+        /* Spezialfarbe für Layers-Tab */
+        #sidebar.layers-mode {
+            background-color: #5888a7;
+        }
+        #sidebar h2 {
+            margin-top: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            font-family: "Times New Roman", Times, serif;
+        }
+
+        /* Style for Map */
+        #map {
+            background-color: white;
+            position: fixed;
+            top: 56px; /* Abstand vom oberen Banner */
+            left: 250px;
+            right: 0;
+            bottom: 0;
+        }
+        .sidebar-tab {
+            display: none;
+        }
+        .sidebar-tab.active {
+            display: block;
+        }
+
+        /* Style for the different Tab buttons */
+        .tab-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-top: 0px;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 12px 0;
+            font-size: 15px;
+            font-weight: bold;
+            background-color: #87a5b8;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .tab-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Container darunter leicht umrahmen */
+        #tabContent {
+            border: 1px solid #ccc;
+            padding: 15px;
+            background: white;
+            border-top: none;
+            position: relative;
+            z-index: 1;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        #languageSelect {
+            width: auto;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            background-color: #87a5b8;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-left: 10px; /* Abstand zum Text/Logo */
+        }
+
+        #languageSelect:hover {
+            background-color: #e0e0e0;
+        }
+
+        
         </style>
+
         <title></title>
     </head>
+
+ <!--****************************************************************************************************************
+ // BODY : 
+ // ***************************************************************************************************************** -->
     <body>
+        <div id="page-title-banner">
+            <div id="languageSwitcher" style="position: absolute; top: 10px; left: 10px; z-index: 9999;">
+                <select id="languageSelect">
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
+                </select>
+            </div>
+            <div style="width: 300px;"></div> <!-- Spacer -->    
+            <span data-i18n="title">
+                Interventionzones of Development Projects in the Environmental Sector of Madagascar
+            </span>
+            <span class="title-extra" style="position:absolute; right:5px; padding:1px; margin:0; z-index:1000;">
+                <img src="images/global_gateway.png" alt="Logo" height="80" style="width: 150px" >
+                <img src="images/EU.png" alt="Logo" height="70" style="width: 80px">
+                <img src="images/cooperation_allemand.png" alt="Logo" height="60" style="width: 220px">
+            </span>
+        </div>
+              
         <div id="map">
         </div>
+
+<!-- SIDEBAR
+ *****************************-->
+        <div id="sidebar" >
+            <div id="layer-control"></div> <!-- Hier kommt der Layer Tree hinein -->
+            <div id="sidebar-footer" style="margin-top: 10px; font-family: sans-serif; font-size: 14px; line-height: 1.6;">
+
+            <!-- TAB BUTTONS -->
+            <div id="tabButtons" style="display: flex; gap: 10px; margin-bottom: 0; margin-top: -10px">
+                <button onclick="showTab('infoTab')" class="tab-button active" >Information</button>
+                <button onclick="showTab('layersTab')" class="tab-button" style="background-color: #5888a7;" >Layers</button>
+            </div>    
+            
+            <!-- TAB CONTENTS -->
+            <div id="infoTab" class="sidebar-tab">
+            <h3 style="margin-bottom: 10px;" data-i18n="Title">About This Website</h3>
+            <p data-i18n="Text1">
+                This interactive map was created to visualize the intervention zones of different development projects working in the same geographical and thematic context. 
+                Its goal is to help identify synergies and overlaps, and ultimately increase the collective impact of individual projects.
+            </p>
+            <p data-i18n="Text2">
+                The data displayed has been provided by the respective projects and other relevant sources, which are cited below where applicable:
+                <br> <a href="https://glad.earthengine.app/view/global-forest-change#bl=off;old=off;dl=3;lon=46.978817523774445;lat=-16.23446124478779;zoom=11;" style="color: #04115e;">GLAD opensource data</a>
+            </p>
+            <p style="font-size: 12px; font-style: italic; color: #555;" data-i18n="Disclaimer">
+                Disclaimer: All data is presented for informational purposes only. The creators of this site do 
+                not guarantee the accuracy or completeness of the displayed information. Use of the data is 
+                at your own risk.
+            </p>
+            <p style="margin-top: 20px;" data-i18n="Footer">
+                Created by the technical team of the PADDI project, GIZ Madagascar, as of July 2025.<br>
+                If you encounter a problem or would like to make a suggestion, please contact us: <a href="mailto:paddi-giz@giz.de" style="color: #04115e;">paddi-giz@giz.de</a>
+            </p>
+            </div>
+  
+            <div id="layersTab" class="sidebar-tab">
+            <h3>Layers</h3>
+                <button id="clearLayersBtn">🗑️ Clear all layers</button>
+                <p><br></p>
+                <label for="regionZoom" style="font-family: Arial; font-size: 13px;"><b>Zoom to Region:</b></label>
+                    <select id="regionZoom" style="font-family: Arial; font-size: 13px;">
+                        <option value="">Choose Region…</option>
+                        <option value="Alaotra Mangoro">Alaotra Mangoro</option>
+                        <option value="Amoron'i Mania">Amoron'i Mania</option>
+                        <option value="Analamanga">Analamanga</option>
+                        <option value="Analanjirofo">Analanjirofo</option>
+                        <option value="Androy">Androy</option>
+                        <option value="Anosy">Anosy</option>
+                        <option value="Atsimo Andrefana">Atsimo Andrefana</option>
+                        <option value="Atsimo Atsinanana">Atsimo Atsinanana</option>
+                        <option value="Atsinanana">Atsinanana</option>
+                        <option value="Betsiboka">Betsiboka</option>
+                        <option value="Boeny">Boeny</option>
+                        <option value="Bongolava">Bongolava</option>
+                        <option value="DIANA">DIANA</option>
+                        <option value="Haute Matsiatra">Haute Matsiatra</option>
+                        <option value="Ihorombe">Ihorombe</option>
+                        <option value="Itasy">Itasy</option>
+                        <option value="Melaky">Melaky</option>
+                        <option value="Menabe">Menabe</option>
+                        <option value="SAVA">SAVA</option>
+                        <option value="Sofia">Sofia</option>
+                        <option value="Vakinankaratra">Vakinankaratra</option>
+                        <option value="Vatovavy Fitovinany">Vatovavy Fitovinany</option>
+                    </select>
+                <label for="topicFilter" style="font-family: Arial; font-size: 13px;"><b>Filter by Topic:</b></label>
+                    <select id="topicFilter" style="margin-left: 14px">
+                      <option value="">Choose Topic…</option>
+                      <option value="reforest">Reforestation efforts</option>
+                      <option value="erosion">Erosion control</option>
+                      <option value="fire">Wildfire control</option>
+                    </select>
+                    <p><br></p>
+            <div id="treeControlContainer"></div>
+            <div id="legendContainer"></div>
+            <div id="contextMenu" style="
+                display: none;
+                position: absolute;
+                z-index: 10000;
+                background-color: white;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                padding: 2px 5px;
+                box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
+                font-size: 12px;
+                cursor: pointer;
+            ">
+                Zoom to Layer
+            </div>
+            </div>
+        </div>
+  
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
@@ -37,16 +290,10 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-measure.js"></script>
+        
         <script src="data/Region_0.js"></script>
         <script src="data/District_1.js"></script>
         <script src="data/commune_2.js"></script>
-        <script src="data/PAGE2_3.js"></script>
-        <script src="data/ProDECID_4.js"></script>
-        <script src="data/ProPFR_5.js"></script>
-        <script src="data/F4F_6.js"></script>
-        <script src="data/ProSOL_7.js"></script>
-        <script src="data/BIA_8.js"></script>
-        <script src="data/PLAEV_9.js"></script>
         <script src="data/Campement_10.js"></script>
         <script src="data/Coupeillicite_11.js"></script>
         <script src="data/Carbonisation_12.js"></script>
@@ -95,6 +342,85 @@
         <script src="data/Foretscommunales_55.js"></script>
         <script src="data/Agroforesterie_56.js"></script>
         <script src="data/Reboisement_57.js"></script>
+
+<!-- Translation button ENG FR
+ ***********************************-->
+ <script>
+    const translations = {
+      en: {
+        title: "Interventionzones of Development Projects in the Environmental Sector of Madagascar",
+        Title: "About This Website",
+        Text1: "This interactive map was created to visualize the intervention zones of different development projects working in the same geographical and thematic context. Its goal is to help identify synergies and overlaps, and ultimately increase the collective impact of individual projects.",
+        Text2: `The data displayed has been provided by the respective projects and other relevant sources, which are cited below where applicable:
+                <br> <a href="https://glad.earthengine.app/view/global-forest-change#bl=off;old=off;dl=3;lon=46.978817523774445;lat=-16.23446124478779;zoom=11;" style="color: #04115e;">GLAD opensource data</a>`,
+        Disclaimer: "Disclaimer: All data is presented for informational purposes only. The creators of this site do not guarantee the accuracy or completeness of the displayed information. Use of the data is at your own risk.",
+        aboutFooter: `Created by the technical team of the PADDI project, GIZ Madagascar, as of July 2025.<br>
+                        If you encounter a problem or would like to make a suggestion, please contact us: 
+                        <a href="mailto:paddi-giz@giz.de" style="color: #04115e;">paddi-giz@giz.de</a>`
+        },
+      fr: {
+        title: "Zones d'intervention des projets de développement dans le secteur de l'environnement à Madagascar",
+        Title: "À propos de ce site",
+        Text1: "Cette carte interactive a été créée pour visualiser les zones d'intervention de différents projets de développement travaillant dans le même contexte géographique et thématique. Son objectif est d'aider à identifier les synergies et les chevauchements, et finalement d'augmenter l'impact collectif des projets individuels.",
+        Text2: `Les données affichées ont été fournies par les projets respectifs et d'autres sources pertinentes, citées ci-dessous lorsque cela est applicable :
+                <br> <a href="https://glad.earthengine.app/view/global-forest-change#bl=off;old=off;dl=3;lon=46.978817523774445;lat=-16.23446124478779;zoom=11;" style="color: #04115e;">Données open source GLAD</a>`,
+        Disclaimer: "Avertissement : Toutes les données sont présentées uniquement à titre informatif. Les créateurs de ce site ne garantissent pas l'exactitude ou l'exhaustivité des informations affichées. L'utilisation des données se fait à vos risques et périls.",
+        Footer: `Créé par l'équipe technique du projet PADDI, GIZ Madagascar, en juillet 2025.<br>
+                Si vous rencontrez un problème ou souhaitez faire une suggestion, veuillez nous contacter : 
+                <a href="mailto:paddi-giz@giz.de" style="color: #04115e;">paddi-giz@giz.de</a>`
+        }
+    };
+    
+    function setLanguage(lang) {
+        localStorage.setItem("language", lang);
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const key = el.getAttribute("data-i18n");
+            if (translations[lang][key]) {
+      // Use innerHTML to preserve links/line breaks
+            el.innerHTML = translations[lang][key];
+        }
+    });
+}
+    
+    document.getElementById("languageSelect").addEventListener("change", (e) => {
+      setLanguage(e.target.value);
+    });
+    
+    // Sprache beim Laden setzen (aus localStorage oder Standard)
+    const savedLang = localStorage.getItem("language") || "en";
+    document.getElementById("languageSelect").value = savedLang;
+    setLanguage(savedLang);
+    </script>
+    
+
+<!-- JAVASCRIPT TO SWITCH TABS 
+************************************-->
+        <script>
+            function showTab(tabId) {
+            // Tabs umschalten
+            document.getElementById("infoTab").style.display = tabId === "infoTab" ? "block" : "none";
+            document.getElementById("layersTab").style.display = tabId === "layersTab" ? "block" : "none";
+
+            // Aktive Tab-Button-Klasse
+            document.querySelectorAll(".tab-button").forEach(btn => btn.classList.remove("active"));
+             if (tabId === "infoTab") {
+            document.querySelector("button[onclick=\"showTab('infoTab')\"]").classList.add("active");
+             } else {
+            document.querySelector("button[onclick=\"showTab('layersTab')\"]").classList.add("active");
+             }
+            // Sidebar-Farbe wechseln
+            const sidebar = document.getElementById("sidebar");
+            if (tabId === "layersTab") {
+            sidebar.classList.add("layers-mode");
+            } else {
+            sidebar.classList.remove("layers-mode");
+            }
+            }
+            
+            // Optional: activate the first tab on page load
+            showTab('infoTab');
+        </script>
+
         <script>
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
@@ -116,6 +442,12 @@
          }
          return tempDiv.innerHTML;
         }
+
+        
+// *****************************************************************************************************************************************************************
+// ADDING POP UP FEATURE TO THE DATA
+// *****************************************************************************************************************************************************************
+
         // add class to format popup if it contains media
 		function addClassToPopupIfMedia(content, popup) {
 			var tempDiv = document.createElement('div');
@@ -130,11 +462,14 @@
 				popup._contentNode.classList.remove('media');
 			}
 		}
+
+        // ZOOM and MEASUREMENT function
+        //*********************************
         var zoomControl = L.control.zoom({
-            position: 'topleft'
+            position: 'topright'
         }).addTo(map);
         var measureControl = new L.Control.Measure({
-            position: 'topleft',
+            position: 'topright',
             primaryLengthUnit: 'meters',
             secondaryLengthUnit: 'kilometers',
             primaryAreaUnit: 'sqmeters',
@@ -143,6 +478,8 @@
         measureControl.addTo(map);
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
         document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        
+        
         var bounds_group = new L.featureGroup([]);
         function setBounds() {
         }
@@ -277,409 +614,7 @@
         });
         bounds_group.addLayer(layer_commune_2);
         map.addLayer(layer_commune_2);
-        function pop_PAGE2_3(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['PAGE2'] !== null ? autolinker.link(feature.properties['PAGE2'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function style_PAGE2_3_0() {
-            return {
-                pane: 'pane_PAGE2_3',
-                stroke: false, 
-                fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(225,245,212,1.0)',
-                interactive: true,
-            }
-        }
-        map.createPane('pane_PAGE2_3');
-        map.getPane('pane_PAGE2_3').style.zIndex = 403;
-        map.getPane('pane_PAGE2_3').style['mix-blend-mode'] = 'normal';
-        var layer_PAGE2_3 = new L.geoJson(json_PAGE2_3, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_PAGE2_3',
-            layerName: 'layer_PAGE2_3',
-            pane: 'pane_PAGE2_3',
-            onEachFeature: pop_PAGE2_3,
-            style: style_PAGE2_3_0,
-        });
-        bounds_group.addLayer(layer_PAGE2_3);
-        function pop_ProDECID_4(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['PRODECID'] !== null ? autolinker.link(feature.properties['PRODECID'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        var pattern_ProDECID_4_0 = new L.StripePattern({
-            weight: 1.0,
-            spaceWeight: 2.6,
-            color: '#ff4a03',
-            opacity: 1.0,
-            spaceOpacity: 0,
-            angle: 315
-        });
-        pattern_ProDECID_4_0.addTo(map);
-        function style_ProDECID_4_0() {
-            return {
-                pane: 'pane_ProDECID_4',
-                stroke: false,
-                fillOpacity: 1,
-                fillPattern: pattern_ProDECID_4_0,
-                interactive: true,
-            }
-        }
-        function style_ProDECID_4_1() {
-            return {
-                pane: 'pane_ProDECID_4',
-                stroke: false,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_ProDECID_4');
-        map.getPane('pane_ProDECID_4').style.zIndex = 404;
-        map.getPane('pane_ProDECID_4').style['mix-blend-mode'] = 'normal';
-        var layer_ProDECID_4 = new L.geoJson.multiStyle(json_ProDECID_4, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_ProDECID_4',
-            layerName: 'layer_ProDECID_4',
-            pane: 'pane_ProDECID_4',
-            onEachFeature: pop_ProDECID_4,
-            styles: [style_ProDECID_4_0,style_ProDECID_4_1,]
-        });
-        bounds_group.addLayer(layer_ProDECID_4);
-        function pop_ProPFR_5(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['PROPFR'] !== null ? autolinker.link(feature.properties['PROPFR'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        var pattern_ProPFR_5_0 = new L.StripePattern({
-            weight: 1.0,
-            spaceWeight: 2.4,
-            color: '#34b130',
-            opacity: 1.0,
-            spaceOpacity: 0,
-            angle: 360
-        });
-        pattern_ProPFR_5_0.addTo(map);
-        function style_ProPFR_5_0() {
-            return {
-                pane: 'pane_ProPFR_5',
-                stroke: false,
-                fillOpacity: 1,
-                fillPattern: pattern_ProPFR_5_0,
-                interactive: true,
-            }
-        }
-        function style_ProPFR_5_1() {
-            return {
-                pane: 'pane_ProPFR_5',
-                stroke: false,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_ProPFR_5');
-        map.getPane('pane_ProPFR_5').style.zIndex = 405;
-        map.getPane('pane_ProPFR_5').style['mix-blend-mode'] = 'normal';
-        var layer_ProPFR_5 = new L.geoJson.multiStyle(json_ProPFR_5, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_ProPFR_5',
-            layerName: 'layer_ProPFR_5',
-            pane: 'pane_ProPFR_5',
-            onEachFeature: pop_ProPFR_5,
-            styles: [style_ProPFR_5_0,style_ProPFR_5_1,]
-        });
-        bounds_group.addLayer(layer_ProPFR_5);
-        function pop_F4F_6(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['F4F'] !== null ? autolinker.link(feature.properties['F4F'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        var pattern_F4F_6_0 = new L.StripePattern({
-            weight: 1.0,
-            spaceWeight: 2.0,
-            color: '#367cec',
-            opacity: 1.0,
-            spaceOpacity: 0,
-            angle: 225
-        });
-        pattern_F4F_6_0.addTo(map);
-        function style_F4F_6_0() {
-            return {
-                pane: 'pane_F4F_6',
-                stroke: false,
-                fillOpacity: 1,
-                fillPattern: pattern_F4F_6_0,
-                interactive: true,
-            }
-        }
-        function style_F4F_6_1() {
-            return {
-                pane: 'pane_F4F_6',
-                stroke: false,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_F4F_6');
-        map.getPane('pane_F4F_6').style.zIndex = 406;
-        map.getPane('pane_F4F_6').style['mix-blend-mode'] = 'normal';
-        var layer_F4F_6 = new L.geoJson.multiStyle(json_F4F_6, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_F4F_6',
-            layerName: 'layer_F4F_6',
-            pane: 'pane_F4F_6',
-            onEachFeature: pop_F4F_6,
-            styles: [style_F4F_6_0,style_F4F_6_1,]
-        });
-        bounds_group.addLayer(layer_F4F_6);
-        function pop_ProSOL_7(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['PROSOL'] !== null ? autolinker.link(feature.properties['PROSOL'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        var pattern_ProSOL_7_0 = new L.StripePattern({
-            weight: 0.9,
-            spaceWeight: 2.0,
-            color: '#000000',
-            opacity: 1.0,
-            spaceOpacity: 0,
-            angle: 315
-        });
-        pattern_ProSOL_7_0.addTo(map);
-        function style_ProSOL_7_0() {
-            return {
-                pane: 'pane_ProSOL_7',
-                stroke: false,
-                fillOpacity: 1,
-                fillPattern: pattern_ProSOL_7_0,
-                interactive: true,
-            }
-        }
-        var pattern_ProSOL_7_1 = new L.StripePattern({
-            weight: 0.9,
-            spaceWeight: 2.0,
-            color: '#000000',
-            opacity: 1.0,
-            spaceOpacity: 0,
-            angle: 225
-        });
-        pattern_ProSOL_7_1.addTo(map);
-        function style_ProSOL_7_1() {
-            return {
-                pane: 'pane_ProSOL_7',
-                stroke: false,
-                fillOpacity: 1,
-                fillPattern: pattern_ProSOL_7_1,
-                interactive: true,
-            }
-        }
-        function style_ProSOL_7_2() {
-            return {
-                pane: 'pane_ProSOL_7',
-                stroke: false,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_ProSOL_7');
-        map.getPane('pane_ProSOL_7').style.zIndex = 407;
-        map.getPane('pane_ProSOL_7').style['mix-blend-mode'] = 'normal';
-        var layer_ProSOL_7 = new L.geoJson.multiStyle(json_ProSOL_7, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_ProSOL_7',
-            layerName: 'layer_ProSOL_7',
-            pane: 'pane_ProSOL_7',
-            onEachFeature: pop_ProSOL_7,
-            styles: [style_ProSOL_7_0,style_ProSOL_7_1,style_ProSOL_7_2,]
-        });
-        bounds_group.addLayer(layer_ProSOL_7);
-        function pop_BIA_8(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['BIA'] !== null ? autolinker.link(feature.properties['BIA'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function style_BIA_8_0() {
-            return {
-                pane: 'pane_BIA_8',
-                opacity: 1,
-                color: 'rgba(194,22,25,1.0)',
-                dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 1.0,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_BIA_8');
-        map.getPane('pane_BIA_8').style.zIndex = 408;
-        map.getPane('pane_BIA_8').style['mix-blend-mode'] = 'normal';
-        var layer_BIA_8 = new L.geoJson(json_BIA_8, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_BIA_8',
-            layerName: 'layer_BIA_8',
-            pane: 'pane_BIA_8',
-            onEachFeature: pop_BIA_8,
-            style: style_BIA_8_0,
-        });
-        bounds_group.addLayer(layer_BIA_8);
-        function pop_PLAEV_9(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2"><b>Region: </b>' + (feature.properties['REGION'] !== null ? autolinker.link(feature.properties['REGION'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>District: </b>' + (feature.properties['DISTRICT'] !== null ? autolinker.link(feature.properties['DISTRICT'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Commune: </b>' + (feature.properties['COMMUNE'] !== null ? autolinker.link(feature.properties['COMMUNE'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Projet: </b>' + (feature.properties['PLAE5'] !== null ? autolinker.link(feature.properties['PLAE5'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
-
-        function style_PLAEV_9_0() {
-            return {
-                pane: 'pane_PLAEV_9',
-                opacity: 1,
-                color: 'rgba(133,27,147,1.0)',
-                dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 1.0,
-                fillOpacity: 0,
-                interactive: true,
-            }
-        }
-        map.createPane('pane_PLAEV_9');
-        map.getPane('pane_PLAEV_9').style.zIndex = 409;
-        map.getPane('pane_PLAEV_9').style['mix-blend-mode'] = 'normal';
-        var layer_PLAEV_9 = new L.geoJson(json_PLAEV_9, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_PLAEV_9',
-            layerName: 'layer_PLAEV_9',
-            pane: 'pane_PLAEV_9',
-            onEachFeature: pop_PLAEV_9,
-            style: style_PLAEV_9_0,
-        });
-        bounds_group.addLayer(layer_PLAEV_9);
+        
         function pop_Campement_10(feature, layer) {
             
         }
@@ -3036,75 +2971,323 @@
             style: style_Reboisement_57_0,
         });
         bounds_group.addLayer(layer_Reboisement_57);
+
+// *********************************************************************************************************************************************
+// LEGEND
+// *********************************************************************************************************************************************
+
         var baseMaps = {};
         var overlaysTree = [
-            {label: '<img src="legend/Region_0.png" /> Région', layer: layer_Region_0},
-            {label: '<img src="legend/District_1.png" /> District', layer: layer_District_1},
-            {label: '<img src="legend/commune_2.png" /> Commune', layer: layer_commune_2},
-            {label: '<img src="legend/Airesproteges_17.png" /> Aires protégées<br> <b>Pression anthropiques 2018-2023 </br>', layer: layer_Airesproteges_17},
-            {label: '<img src="legend/ProduitsforestiersnonligneuxPFNL_16.png" /> Produits forestiers non ligneux (PFNL)', layer: layer_ProduitsforestiersnonligneuxPFNL_16},
-            {label: '<img src="legend/Braconage_15.png" /> Braconage', layer: layer_Braconage_15},
-            {label: '<img src="legend/Exploitationminiere_14.png" /> Exploitation minière', layer: layer_Exploitationminiere_14},
-            {label: '<img src="legend/Defrichementetplantationetfeux_13.png" /> Défrichement et plantation et feux', layer: layer_Defrichementetplantationetfeux_13},
-            {label: '<img src="legend/Carbonisation_12.png" /> Carbonisation', layer: layer_Carbonisation_12},
-            {label: '<img src="legend/Coupeillicite_11.png" /> Coupe illicite', layer: layer_Coupeillicite_11},
-            {label: '<img src="legend/Campement_10.png" /> Campement<br> <b>PLAE II&III </br>', layer: layer_Campement_10},
-            {label: '<img src="legend/Reboisement_57.png" /> Reboisement<br> <b>PLAE V </br>', layer: layer_Reboisement_57},
-            {label: '<img src="legend/Agroforesterie_56.png" /> Agroforesterie', layer: layer_Agroforesterie_56},
-            {label: '<img src="legend/Foretscommunales_55.png" /> Forêts communales', layer: layer_Foretscommunales_55},
-            {label: '<img src="legend/Lutteantierosive_54.png" /> Lutte antierosive', layer: layer_Lutteantierosive_54},
-            {label: '<img src="legend/Miseendefens_53.png" /> Mise en defens', layer: layer_Miseendefens_53},
-            {label: '<img src="legend/Paturage_52.png" /> Paturage', layer: layer_Paturage_52},
-            {label: '<img src="legend/Reboisement_51.png" /> Reboisement<br> <b>PLAE VI </br>', layer: layer_Reboisement_51},
-            {label: '<img src="legend/Zonedinterventionprvue_50.png" /> Zone d\'intervention prévue<br> <b>PAGE2 </br> <span style="font-weight: normal">Appuis aux CDV ligneuses</span>', layer: layer_Zonedinterventionprvue_50},
-            {label: '<img src="legend/Centreurbainruralducharbon_46.png" /> Centre urbain/rural du charbon', layer: layer_Centreurbainruralducharbon_46},
-            {label: '<img src="legend/CRCdepots_47.png" /> CRC depots', layer: layer_CRCdepots_47},
-            {label: '<img src="legend/Pointdevente_45.png" /> Point de vente', layer: layer_Pointdevente_45},
-            {label: '<img src="legend/SitesGMDR_48.png" /> Sites GMDR', layer: layer_SitesGMDR_48},
-            {label: '<img src="legend/VillageTCA_43.png" /> Village TCA', layer: layer_VillageTCA_43},
-            {label: '<img src="legend/Bassin_CRC_GMDR_44.png" /> Bassin CRC/GMDR', layer: layer_Bassin_CRC_GMDR_44},
-            {label: '<img src="legend/AtelierMajunga_42.png" /> Foyer amélioré atelier Majunga', layer: layer_AtelierMajunga_42},
-            {label: '<img src="legend/Pointdevente_41.png" /> Point de vente foyer amélioré', layer: layer_Pointdevente_41},
-            {label: '<img src="legend/COSSites_40.png" /> COS Sites<br> <span style="font-weight: normal">Appuis aux CdV non ligneuses</span>', layer: layer_COSSites_40},
-            {label: '<img src="legend/menages_cdv_34.png" /> Ménages chaînes de valeur', layer: layer_menages_cdv_34},
-            {label: '<img src="legend/Sitesapicoles_36.png" /> Sites apicoles', layer: layer_Sitesapicoles_36},
-            {label: '<img src="legend/Pt_vente_miel_Ambanja_35.png" /> Points de vente miel Ambanja', layer: layer_Pt_vente_miel_Ambanja_35},
-            {label: '<img src="legend/Localisation_plantation_BR_Diego2Beramanja_33.png" /> Plantation baie rose', layer: layer_Localisation_plantation_BR_Diego2Beramanja_33},
-            {label: '<img src="legend/Moringa_31.png" /> Moringa', layer: layer_Moringa_31},
-            {label: '<img src="legend/Villages_FBS_28.png" /> Villages FBS', layer: layer_Villages_FBS_28},
-            {label: '<img src="legend/Villages_GEC_29.png" /> Villages GEC<br> <span style="font-weight: normal">Gestion durable </span>', layer: layer_Villages_GEC_29},
-            {label: '<img src="legend/EcoleVerte_27.png" /> Ecole Verte', layer: layer_EcoleVerte_27},
-            {label: '<img src="legend/TGRN_24.png" /> TGRN', layer: layer_TGRN_24},
-            {label: '<img src="legend/Reboisement_Anacarde_S1_S2_S3_32.png" /> Reboisement anacarde', layer: layer_Reboisement_Anacarde_S1_S2_S3_32},
-            {label: '<img src="legend/Reboisementvillageoisindividuel_49.png" /> Reboisement villageois individuel', layer: layer_Reboisementvillageoisindividuel_49},
-            {label: '<img src="legend/ActionsCovidReboisementECOBlueVenturesAgaKhan_30.png" /> Actions Covid (Reboisement ECO, BlueVentures, AgaKhan)', layer: layer_ActionsCovidReboisementECOBlueVenturesAgaKhan_30},
-            {label: '<img src="legend/Reboisement_antierosif_26.png" /> Reboisement antierosif', layer: layer_Reboisement_antierosif_26},
-            {label: '<img src="legend/ProtectionBerge_25.png" /> Protection "Berge"<br> <span style="font-weight: normal">Appuis à la mise en œuvre des SAC</span>', layer: layer_ProtectionBerge_25},
-            {label: '<img src="legend/Parefeu_39.png" /> Pare-feu', layer: layer_Parefeu_39},
-            {label: '<img src="legend/MEO_SAC_BOENY_DIANA_37.png" /> Mise en place des infrastructures<br> <b>Forests4Future </br>', layer: layer_MEO_SAC_BOENY_DIANA_37},
-            {label: '<img src="legend/F4F_23.png" /> Zones d´intervention/reboisement <br> <b>ProSol </br>', layer: layer_F4F_23},
-            {label: '<img src="legend/Paturage_22.png" /> Paturage', layer: layer_Paturage_22},
-            {label: '<img src="legend/Parcelle_amenagee_21.png" /> Parcelle aménagée <br> <b>ProPFR </br>', layer: layer_Parcelle_amenagee_21},
-            {label: '<img src="legend/certificatfoncier_20.png" /> Certificat foncier', layer: layer_certificatfoncier_20},
-            {label: '<img src="legend/ProPFR_Zonage_19.png" /> Zonage', layer: layer_ProPFR_Zonage_19},
-            {label: '<img src="legend/ProPFR_Limite_TG_18.png" /> Limite TG <br> <b>Synergies Cooperation Allemande </br>', layer: layer_ProPFR_Limite_TG_18},
-            {label: '<img src="legend/PLAEV_9.png" /> PLAE V', layer: layer_PLAEV_9},
-            {label: '<img src="legend/BIA_8.png" /> BIA', layer: layer_BIA_8},
-            {label: '<img src="legend/ProSOL_7.png" /> ProSOL', layer: layer_ProSOL_7},
-            {label: '<img src="legend/F4F_6.png" /> F4F', layer: layer_F4F_6},
-            {label: '<img src="legend/ProPFR_5.png" /> ProPFR', layer: layer_ProPFR_5},
-            {label: '<img src="legend/ProDECID_4.png" /> ProDECID', layer: layer_ProDECID_4},
-            {label: '<img src="legend/PAGE2_3.png" /> PAGE2', layer: layer_PAGE2_3},]
-        var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
+        {label: "<b>Administrative Boundaries</b>", children: [
+            {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Region_0.png" /> Region</span>', layer: layer_Region_0},
+            {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/District_1.png" /> District', layer: layer_District_1},
+            {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/commune_2.png" /> Commune', layer: layer_commune_2},
+            {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Airesproteges_17.png" /> Aires protégées', layer: layer_Airesproteges_17}
+            ]
+        },
+        {label: "<b>Environmental Degradation</b>", collapsed: true, children: [
+ //           {label: "Deforestation 2000-2023 (GLAD)" },
+ //           {label: "Forestloss by fire 2000-2023 (GLAD)" },
+ //           {label: "Burnt area 2000-2024"},
+            {label: "Anthropogenic Pressure 2018-2023", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/ProduitsforestiersnonligneuxPFNL_16.png" /> Produits forestiers non ligneux (PFNL)', layer: layer_ProduitsforestiersnonligneuxPFNL_16},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Braconage_15.png" /> Braconage', layer: layer_Braconage_15},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Exploitationminiere_14.png" /> Exploitation minière', layer: layer_Exploitationminiere_14},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Defrichementetplantationetfeux_13.png" /> Défrichement et plantation et feux', layer: layer_Defrichementetplantationetfeux_13},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Carbonisation_12.png" /> Carbonisation', layer: layer_Carbonisation_12},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Coupeillicite_11.png" /> Coupe illicite', layer: layer_Coupeillicite_11},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Campement_10.png" /> Campement', layer: layer_Campement_10}
+                ]
+            }
+            ]
+        },
+        {label: "<b>KfW</b>", collapsed: true, children: [ 
+            {label: "<b>PLAE II&III</b>", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Reboisement_57.png" /> Reboisement', layer: layer_Reboisement_57, topic: "reforest"}
+                ]
+            },
+            {label: "<b>PLAE V</b>", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Agroforesterie_56.png" /> Agroforesterie', layer: layer_Agroforesterie_56},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Foretscommunales_55.png" /> Forêts communales', layer: layer_Foretscommunales_55},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Lutteantierosive_54.png" /> Lutte antierosive', layer: layer_Lutteantierosive_54, topic: "erosion"},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Miseendefens_53.png" /> Mise en defens', layer: layer_Miseendefens_53},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Paturage_52.png" /> Paturage', layer: layer_Paturage_52},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Reboisement_51.png" /> Reboisement', layer: layer_Reboisement_51, topic: "reforest"}
+                ]
+            },
+            {label: "<b>PLAE VI</b>", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Zonedinterventionprvue_50.png" /> Zone d\'intervention prévue', layer: layer_Zonedinterventionprvue_50}
+                ]
+            },
+            ]
+        },
+        {label: "<b>GIZ</b>", collapsed: true, children: [
+            {label: "<b>PAGE2</b>", collapsed: true, children: [
+                {label: "Appuis aux CDV ligneuses", collapsed: true, children: [
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Centreurbainruralducharbon_46.png" /> Centre urbain/rural du charbon', layer: layer_Centreurbainruralducharbon_46},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/CRCdepots_47.png" /> CRC depots', layer: layer_CRCdepots_47},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Pointdevente_45.png" /> Point de vente', layer: layer_Pointdevente_45},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/SitesGMDR_48.png" /> Sites GMDR', layer: layer_SitesGMDR_48},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/VillageTCA_43.png" /> Village TCA', layer: layer_VillageTCA_43},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Bassin_CRC_GMDR_44.png" /> Bassin CRC/GMDR', layer: layer_Bassin_CRC_GMDR_44},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/AtelierMajunga_42.png" /> Foyer amélioré atelier Majunga', layer: layer_AtelierMajunga_42},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Pointdevente_41.png" /> Point de vente foyer amélioré', layer: layer_Pointdevente_41},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/COSSites_40.png" /> COS Sites', layer: layer_COSSites_40}
+                    ]
+                },
+                {label: "Appuis aux CdV non ligneuses", collapsed: true, children: [
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/menages_cdv_34.png" /> Ménages chaînes de valeur', layer: layer_menages_cdv_34},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Sitesapicoles_36.png" /> Sites apicoles', layer: layer_Sitesapicoles_36},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Pt_vente_miel_Ambanja_35.png" /> Points de vente miel Ambanja', layer: layer_Pt_vente_miel_Ambanja_35},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Localisation_plantation_BR_Diego2Beramanja_33.png" /> Plantation baie rose', layer: layer_Localisation_plantation_BR_Diego2Beramanja_33},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Moringa_31.png" /> Moringa', layer: layer_Moringa_31},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Villages_FBS_28.png" /> Villages FBS', layer: layer_Villages_FBS_28},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Villages_GEC_29.png" /> Villages GEC', layer: layer_Villages_GEC_29}
+                    ]
+                },
+                {label: "Gestion durable", collapsed:true, children: [
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/EcoleVerte_27.png" /> Ecole Verte', layer: layer_EcoleVerte_27},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/TGRN_24.png" /> TGRN', layer: layer_TGRN_24},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Reboisement_Anacarde_S1_S2_S3_32.png" /> Reboisement anacarde', layer: layer_Reboisement_Anacarde_S1_S2_S3_32},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Reboisementvillageoisindividuel_49.png" /> Reboisement villageois individuel', layer: layer_Reboisementvillageoisindividuel_49, topic: "reforest"},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/ActionsCovidReboisementECOBlueVenturesAgaKhan_30.png" /> Actions Covid (Reboisement ECO, BlueVentures, AgaKhan)', layer: layer_ActionsCovidReboisementECOBlueVenturesAgaKhan_30},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Reboisement_antierosif_26.png" /> Reboisement antierosif', layer: layer_Reboisement_antierosif_26, topic: "erosion"},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/ProtectionBerge_25.png" /> Protection "Berge"', layer: layer_ProtectionBerge_25}
+                    ]
+                },
+                {label: "Appuis à la mise en œuvre des SAC", collapsed: true, children: [
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Parefeu_39.png" /> Pare-feu', layer: layer_Parefeu_39, topic: "fire"},
+                    {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/MEO_SAC_BOENY_DIANA_37.png" /> Mise en place des infrastructures', layer: layer_MEO_SAC_BOENY_DIANA_37}
+                    ]
+                }
+                ]
+            },
+            {label: "<b>Forest4Future</b>", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/F4F_23.png" /> Zones d´intervention/reboisement', layer: layer_F4F_23, topic: "reforest"}
+                ]
+            },
+            {label: "<b>ProSol</b>", collapsed: true, children: [  
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Paturage_22.png" /> Paturage', layer: layer_Paturage_22},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/Parcelle_amenagee_21.png" /> Parcelle aménagée', layer: layer_Parcelle_amenagee_21}
+                ]
+            },
+            {label: "<b>ProPFR</b>", collapsed: true, children: [
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/certificatfoncier_20.png" /> Certificat foncier', layer: layer_certificatfoncier_20},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/ProPFR_Zonage_19.png" /> Zonage', layer: layer_ProPFR_Zonage_19},
+                {label: '<span style="font-family: Arial; font-size: 12px;"><img src="legend/ProPFR_Limite_TG_18.png" /> Limite TG', layer: layer_ProPFR_Limite_TG_18}
+                ]
+            }
+            ]
+        },
+        {label: "<b>Other Projects</b>", collapsed: true, children: [
+            {label: "<b>FAO</b>", collapsed: true }
+            ]
+        }
+    ]   
+
+// Moves the leafleat legend "manually" outside into the sidebar tab number 2
+// ***************************************************************************
+        const treeControl = L.control.layers.tree(baseMaps, overlaysTree, {
+            namedToggle: true,
+            selectorBack: false,
             //closedSymbol: '&#8862; &#x1f5c0;',
             //openedSymbol: '&#8863; &#x1f5c1;',
             //collapseAll: 'Collapse all',
             //expandAll: 'Expand all',
-            collapsed: true,
+            collapsed: false,
+            });
+        
+        // to add it to the object
+        treeControl.addTo(map);
+
+        // Moving the "container" to the sidebar (only works if map is already loaded) 
+        setTimeout(() => {
+        const defaultControlContainer = document.querySelector('.leaflet-control-layers'); // oder andere genauere Klasse
+        const sidebarTarget = document.getElementById("treeControlContainer");
+
+        if (defaultControlContainer && sidebarTarget) {
+            sidebarTarget.appendChild(defaultControlContainer);
+            // Style of the legend box
+            defaultControlContainer.style.maxHeight = "600px";
+            defaultControlContainer.style.width = "250px"; 
+            defaultControlContainer.style.padding = "10px";
+            defaultControlContainer.style.backgroundColor = "white";
+            defaultControlContainer.style.border = "1px solid #ccc";
+            defaultControlContainer.style.borderRadius = "8px";
+            defaultControlContainer.style.fontSize = "13px";
+            }
+        }, 100); // kleiner Delay, um sicherzugehen dass DOM existiert
+
+        
+// Zoom to Layer button
+// ******************************************************
+function setupRightClickContextMenu() {
+    const contextMenu = document.getElementById("contextMenu");
+    let targetLayer = null;
+
+    // Bestehende Kontextmenü-Events entfernen
+    document.querySelectorAll('.leaflet-control-layers-overlays label').forEach(label => {
+        label.removeEventListener('contextmenu', label._customRightClick);
+    });
+
+    document.querySelectorAll('.leaflet-control-layers-overlays label').forEach(label => {
+        const handler = function (e) {
+            e.preventDefault();
+
+            // Positioniere Menü näher am Label
+            const rect = label.getBoundingClientRect();
+            contextMenu.style.left = `${rect.right + window.scrollX + 5}px`;
+            contextMenu.style.top = `${rect.top + window.scrollY - 60}px`; // nach oben versetzt
+            contextMenu.style.display = 'block';
+
+            const text = label.textContent.trim();
+
+            // Layer-Zuordnung
+            if (text.includes("Region")) {
+                targetLayer = layer_Region_0;
+            } else if (text.includes("District")) {
+                targetLayer = layer_District_1;
+            } else if (text.includes("Commune")) {
+                targetLayer = layer_commune_2;
+            } else if (text.includes("Aires protégées")) {
+                targetLayer = layer_Airesproteges_17;
+            } else if (text.includes("Produits forestiers non ligneux (PFNL)")) {
+                targetLayer = layer_ProduitsforestiersnonligneuxPFNL_16;
+            } else if (text.includes("Braconage")) {
+                targetLayer = layer_Braconage_15;
+            } else if (text.includes("Exploitation minière")) {
+                targetLayer = layer_Exploitationminiere_14;
+            } else if (text.includes("Défrichement et plantation et feux")) {
+                targetLayer = layer_Defrichementetplantationetfeux_13;
+            } else if (text.includes("Carbonisation")) {
+                targetLayer = layer_Carbonisation_12;
+            } else if (text.includes("Coupe illicite")) {
+                targetLayer = layer_Coupeillicite_11;
+            } else if (text.includes("Campement")) {
+                targetLayer = layer_Campement_10;
+            } else if (text.includes("Reboisement")) {
+                targetLayer = layer_Reboisement_57;
+            } else if (text.includes("Agroforesterie")) {
+                targetLayer = layer_Agroforesterie_56;
+            } else if (text.includes("Forêts communales")) {
+                targetLayer = layer_Foretscommunales_55;
+            } else if (text.includes("Lutte antierosive")) {
+                targetLayer = layer_Lutteantierosive_54;
+            } else if (text.includes("Mise en defens")) {
+                targetLayer = layer_Miseendefens_53;
+            } else if (text.includes("Paturage")) {
+                targetLayer = layer_Paturage_52;
+            } else if (text.includes("Reboisement")) {
+                targetLayer = layer_Reboisement_51;
+            } else if (text.includes("Zone d'intervention prévue")) {
+                targetLayer = layer_Zonedinterventionprvue_50;
+            } else if (text.includes("Centre urbain/rural du charbon")) {
+                targetLayer = layer_Centreurbainruralducharbon_46;
+            } else {
+                targetLayer = null;
+            }
+        };
+
+        label._customRightClick = handler;
+        label.addEventListener('contextmenu', handler);
+    });
+
+    // Klick auf Menü = Zoom
+    contextMenu.addEventListener('click', () => {
+        if (targetLayer && map.hasLayer(targetLayer)) {
+            map.fitBounds(targetLayer.getBounds(), { padding: [20, 20] });
+        }
+        contextMenu.style.display = 'none';
+    });
+
+    // Klick außerhalb = Menü schließen
+    document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) {
+            contextMenu.style.display = 'none';
+        }
+    });
+}
+
+
+// Zoom to Region
+// *************************************
+        document.getElementById("regionZoom").addEventListener("change", function () {
+        var selected = this.value;
+
+        if (!selected) return; // keine Auswahl
+
+        layer_Region_0.eachLayer(function (layer) {
+            if (layer.feature && layer.feature.properties.REGION === selected) {
+            map.fitBounds(layer.getBounds(), {
+                padding: [20, 20]
+            });
+            }
         });
-        lay.addTo(map);
+        });
+
+// Filter by Topic
+// **************************************
+        document.getElementById("topicFilter").addEventListener("change", function () {
+        const selectedTopic = this.value;
+
+        if (!selectedTopic) return;
+
+        // Alle Layer aus overlaysTree durchgehen: zuerst alle Overlays entfernen
+        function clearOverlayLayers(tree) {
+            tree.forEach(item => {
+            if (item.children) {
+                clearOverlayLayers(item.children);
+            } else if (item.layer && map.hasLayer(item.layer) && item.layer !== layer_Region_0) {
+              map.removeLayer(item.layer);
+            }
+            });
+        }
+
+        // Jetzt alle passenden Layer aktivieren
+        function activateTopicLayers(tree) {
+            tree.forEach(item => {
+            if (item.children) {
+                activateTopicLayers(item.children);
+            } else if (item.topic === selectedTopic) {
+                map.addLayer(item.layer);
+            }
+            });
+        }
+
+        clearOverlayLayers(overlaysTree);
+        activateTopicLayers(overlaysTree);
+        // Warte einen Moment, bis die DOM-Elemente aktualisiert sind,
+        // dann die Rechtsklick-Events neu registrieren
+        setTimeout(() => {
+            setupRightClickContextMenu();
+            }, 50);
+        });
+
+        setupRightClickContextMenu();
+
+// Clear all Layers Button
+// ******************************************
+        document.getElementById("clearLayersBtn").addEventListener("click", function () {
+        function clearAllButRegion(tree) {
+            tree.forEach(item => {
+            if (item.children) {
+                clearAllButRegion(item.children);
+            } else if (item.layer && map.hasLayer(item.layer) && item.layer !== layer_Region_0) {
+                map.removeLayer(item.layer);
+            }
+            });
+        }
+
+        clearAllButRegion(overlaysTree);
+
+        // Sicherstellen, dass "Region" aktiv bleibt
+        if (!map.hasLayer(layer_Region_0)) {
+            map.addLayer(layer_Region_0);
+        }
+        });
+
+
+
         setBounds();
         resetLabels([layer_EcoleVerte_27]);
         map.on("zoomend", function(){
