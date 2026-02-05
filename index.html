@@ -2302,12 +2302,6 @@
                     <tr>\
                         <td colspan="2"><b>Commune: </b>' + (feature.properties['Commune'] !== null ? autolinker.link(feature.properties['Commune'].toLocaleString()) : '') + '</td>\
                     </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Fokontany: </b>' + (feature.properties['fokontany'] !== null ? autolinker.link(feature.properties['fokontany'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <td colspan="2"><b>Area (ha): </b>' + (feature.properties['Sup(ha)'] !== null ? autolinker.link(feature.properties['Sup(ha)'].toLocaleString()) : '') + '</td>\
-                    </tr>\
                 </table>';
             var content = removeEmptyRowsFromPopupContent(popupContent, feature);
 			layer.on('popupopen', function(e) {
